@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>verify-attestation</AssemblyName>
+    <RootNamespace>AttestationVerifier.Cli</RootNamespace>
+    <!-- run on whatever runtime is installed, 8 or newer -->
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AttestationVerifier\AttestationVerifier.csproj" />
+  </ItemGroup>
+
+</Project>

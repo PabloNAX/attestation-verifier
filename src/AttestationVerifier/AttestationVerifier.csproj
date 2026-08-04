@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- netstandard2.0 keeps this usable from .NET Framework 4.8, which is what
+         a lot of enterprise .NET still runs on.
+         net8.0 for everything modern. -->
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>AttestationVerifier</AssemblyName>
+    <RootNamespace>AttestationVerifier</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+    <!-- Apple ships the App Attest object as CBOR -->
+    <PackageReference Include="System.Formats.Cbor" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
