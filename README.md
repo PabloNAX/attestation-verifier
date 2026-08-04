@@ -28,6 +28,20 @@ Two different proofs, easy to confuse:
 | Verified against | a vendor root certificate | the stored public key |
 | This repo | yes | no, that part is a one line ECDSA verify |
 
+```mermaid
+flowchart LR
+  subgraph once["enrollment, once"]
+    A["device creates a key<br/>inside secure hardware"] --> B["vendor issues<br/>attestation"]
+    B --> C["server verifies it<br/>and stores the public key"]
+  end
+  subgraph every["every protected action"]
+    D["server issues<br/>a one-time nonce"] --> E["key signs it,<br/>after biometrics"]
+    E --> F["server verifies<br/>with the stored key"]
+  end
+  C -.-> D
+```
+
+
 ## Quick start
 
 ```bash
@@ -46,6 +60,19 @@ checking freshness. Useful while exploring, never in production.
 blocks, or plain PEM. All four turn up in real logs, all four are accepted.
 
 ## Android, what gets checked
+
+```mermaid
+flowchart TD
+  A["certificate chain<br/>from the device"] --> B{"path reaches<br/>a pinned root?"}
+  B -- no --> X["ATTESTATION_INVALID"]
+  B -- yes --> C{"nonce inside the cert<br/>equals the one we issued?"}
+  C -- no --> Y["NONCE_MISMATCH"]
+  C -- yes --> D{"TEE or StrongBox?"}
+  D -- no --> Z["NOT_HARDWARE_BACKED"]
+  D -- yes --> E{"biometric gated,<br/>on every use?"}
+  E -- no --> W["NOT_BIOMETRIC_GATED"]
+  E -- yes --> F["store the public key<br/>taken from the leaf"]
+```
 
 ```
 1  chain parsed, at least two certificates
@@ -77,6 +104,14 @@ whole device class. The fix is to drop the last certificate from the request and
 build the path to your own pinned copy instead. This is why the code does not use
 `X509Chain`.
 
+```mermaid
+flowchart LR
+  L["leaf"] --> I1["intermediate"] --> I2["intermediate"]
+  I2 -. discarded .-> R["root sent by the device<br/>often already expired"]
+  I2 ==> P["pinned root from your config<br/>same key, still valid"]
+```
+
+
 **Take the public key from the certificate, not from the request body.** Otherwise
 an attacker replays somebody else's valid chain together with their own software
 generated key. The chain verifies, and you store the attacker's key.
@@ -101,6 +136,19 @@ the key material and Apple seals into the certificate:
 clientDataHash = SHA256( challenge || publicKeyPem || deviceId || bundleId )
 nonce          = SHA256( authData || clientDataHash )
 ```
+
+```mermaid
+flowchart TD
+  N["server nonce"] --> H
+  K["biometric public key"] --> H
+  D["deviceId"] --> H
+  B["bundleId"] --> H
+  H["clientDataHash = SHA-256 of all four"] --> S["Apple seals it<br/>into the certificate"]
+  S --> V{"server recomputes it<br/>and compares"}
+  V -- match --> OK["the attestation belongs<br/>to THIS biometric key"]
+  V -- differs --> NO["NONCE_MISMATCH"]
+```
+
 
 The server recomputes clientDataHash from its own challenge and the public key in
 the request. It must never take the value from the request body. Skip that
